@@ -94,6 +94,7 @@
             return fn.apply(null, [async.forEach].concat(args));
         };
     };
+    
     var doSeries = function (fn) {
         return function () {
             var args = Array.prototype.slice.call(arguments);
