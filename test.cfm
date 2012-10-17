@@ -10,19 +10,33 @@
 		"https://github.com/foundrycf/fpm"
 	];
 
-	doneEndpoints = function() {
-		console.print("done with endpoints");
+
+	doneEndpoints = function(err) {
+		if(structKeyExists(arguments,'err')) {
+			console.error(err.message);
+		}
+
+		console.print("completed all!");
 	};
 
-	// async.forEach(endpoints,function (endpoint, next) {
-	//     console.print(endpoint);
-	//     next();
-	//   },
-	//   doneEndpoints
-	// );
+	console.log("async.forEach()");
+	async.forEach(endpoints,function (endpoint, next) {
+		
+	  },
+	  doneEndpoints
+	);
 
-	async.filter(endpoints,function(endpoint, next) {
-		console.print("test");
-		//next();
+
+	console.log("async.forEachSeries()");
+	async.forEachSeries(endpoints,function(endpoint, next) {
+		console.print(endpoint);
+		next();
+	},doneEndpoints);
+
+
+	console.log("async.forEachLimit()");
+	async.forEachLimit(endpoints,10,function(endpoint, next) {
+		console.print(endpoint);
+		next();
 	},doneEndpoints);
 </cfscript>
