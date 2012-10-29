@@ -2,152 +2,59 @@ component name="async" extends="foundry.core" {
 	public any function init() {
 		variables._ = require("util",this);
 		variables.console = require("console");
-		// this.this.map = doParallel(_asyncMap);
-		// this.this.mapSeries = doSeries(_asyncMap);
-		
 
-		this.map = doParallel(_asyncMap);
-		this.mapSeries = doSeries(_asyncMap);
-	    // inject alias
-	    this.inject = this.reduce;
-	    // foldl alias
-	    this.foldl = this.reduce;
-	    // foldr alias
-	    this.foldr = this.reduceRight;
-	    this.filter = doParallel(_filter);
-	    this.filterSeries = doSeries(_filter);
-	    // select alias
-	    this.select = this.filter;
-	    this.selectSeries = this.filterSeries;
-	    this.reject = doParallel(_reject);
-	    this.rejectSeries = doSeries(_reject);
+		// this.map = doParallel('_map');
+		// this.mapSeries = doSeries('_map');
+	    // // inject alias
+	    // this.inject = this.reduce;
+	    // // foldl alias
+	    // this.foldl = this.reduce;
+	    // // foldr alias
+	    // this.foldr = this.reduceRight;
+	    
+        this.filter = doParallel('_filter');
+	   // this.filterSeries = doSeries('_filter');
 
-	    this.detect = doParallel(_detect);
-	    this.detectSeries = doSeries(_detect);
-	    // any alias
-	    this.any = this.some;
-	    // all alias
-	    this.all = this.every;
-	    this.concat = doParallel(_concat);
-	    this.concatSeries = doSeries(_concat);
-	    this.log = _console_fn('log');
-	    this.dir = _console_fn('dir');
-	    /*this.info = _console_fn('info');
-	    this.warn = _console_fn('warn');
-	    this.error = _console_fn('error');*/
+	    // // select alias
+	    // this.select = this.filter;
+	    // this.selectSeries = this.filterSeries;
+	    // this.reject = doParallel('_reject');
+	    // this.rejectSeries = doSeries('_reject');
+
+	    // this.detect = doParallel('_detect');
+	    // this.detectSeries = doSeries('_detect');
+	    // // any alias
+	    // this.any = this.some;
+	    // // all alias
+	    // this.all = this.every;
+	    // this.concat = doParallel('_concat');
+	    // this.concatSeries = doSeries('_concat');
+	    // this.log = _console_fn('log');
+	    // this.dir = _console_fn('dir');
+	    // /*this.info = _console_fn('info');
+	    // this.warn = _console_fn('warn');
+	    // this.error = _console_fn('error');*/
 
 		return this;
 	}
 
- 	//ASYNC forEach()
-	public any function forEach(arr, iterator, cb) {
-        var callback = _.isFunction(cb)? cb : noop;
-        
-        if (arrayLen(arr) EQ 0) {
-            return callback();
-        }
+    include "lib/each.cfm";
 
-        var completed = 0;
-        
-        _.forEach(arr, function (x) {
-            testThread = getPageContext().getThread();
-            writeDump(var=testThread.getName());
-            
-        	iterator(x, function (err) {
-                if (structKeyExists(arguments,'err')) {
-                	console.log("error: " & err.message);
-                    callback(err);
-                    callback = noop;
-                } else {
-                    completed++;
-                    console.log("completed: " & completed);
-                    if (completed EQ arrayLen(arr)) {
-                        callback(returnNull());
-                    }
-                }
-            });
-        });
-   	};
-
-    public any function forEachSeries(arr, iterator, cb) {
-        var callback = _.isFunction(cb)? cb : noop;
-        
-        if (arrayLen(arr) EQ 0) {
-            return callback();
-        }
-
-        var completed = 0;
-		var iterate = function () {
-			//THREAD START
-			iterator(arr[completed+1], function (err) {
-					if (structKeyExists(arguments,'err')) {
-		            	console.log("error: " & err.message);
-		                
-		                callback(err);
-		                callback = noop;
-		            } else {
-		                completed++;
-		            	console.log("completed: " & completed);
-		                if (completed EQ arrayLen(arr)) {
-		                    callback(returnNull());
-		                } else {
-		                    iterate();
-		                }
-		            }
-
-		        });
-		};
-
-		iterate();
-    };
-
-    public any function forEachLimit(arr, limit, iterator, cb) {
-        var callback = _.isFunction(cb)? cb : noop;
-        
-        if (arrayLen(arr) EQ 0 OR limit LTE 0) {
-            return callback();
-        }
-
-        var completed = 0;
-        var started = 0;
-        var running = 0;
-
-       var replenish = function() {
-            if (completed EQ arrayLen(arr)) {
-                callback();
+ 	private any function doParallel(fn) {
+        fnc = arguments.fn;
+        var args = {};
+    	
+        returnFn = function() {
+            var fn2 = this[fnc];
+            args['eachfn'] = this.forEach;
+            args['arr'] = arguments['1'];
+            args['iterator'] = arguments['2'];
+            args['callback'] = arguments['3'];
+            for(key in structKeyArray(arguments)) {
+                args[key] = arguments[key];
             }
 
-            while (running < limit AND started < arrayLen(arr)) {
-                started++;
-                running++;
-                iterator(arr[started], function (err) {
-                    if (structKeyExists(arguments,'err')) {
-                    	console.log("error: " & err.message);
-                        callback(err);
-                        callback = noop;
-                    } else {
-                        completed++;
-                        running++;
-                        console.log("completed: " & completed);
-                        if (completed EQ arrayLen(arr)) {
-                            callback();
-                        }
-                        else {
-                            replenish();
-                        }
-                    }
-                });
-            }
-        };
-
-        replenish();
-    };
-
-
-    private any function doParallel(fn) {
-    	returnFn = function() {
-    		structPrepend(arguments,{'0':this.forEach});
-            return _[fn](argumentCollection=arguments);
+            return fn2(argumentCollection=args);
         };
         return returnFn;
     };
@@ -160,259 +67,26 @@ component name="async" extends="foundry.core" {
         return returnFn;
     };
 
-	private any function _asyncMap(eachfn, arr, iterator, callback) {
-	    var results = [];
-	    arr = _.map(arr, function (x, i) {
-	        return {index: i, value: x};
-	    });
+	include "lib/map.cfm";
 
-	    eachfn(arr, function (x, callback) {
-	        iterator(x.value, function (err, v) {
-	            results[x.index] = v;
-	            callback(err);
-	        });
-	    }, function (err) {
-	        callback(err, results);
-	    });
-	};
+	include "lib/reduce.cfm";
 
-	public any function reduce(arr, memo, iterator, callback) {
-        this.forEachSeries(arr, function (x, callback) {
-            iterator(memo, x, function (err, v) {
-                memo = v;
-                callback(err);
-            });
-        }, function (err) {
-            callback(err, memo);
-        });
-    };
+    include "lib/filter.cfm";
+
+    include "lib/reject.cfm";
     
+    include "lib/detect.cfm";
 
-    public any function reduceRight(arr, memo, iterator, callback) {
-        var reversed = _map(arr, function (x) {
-            return x;
-        }).reverse();
-        this.reduce(reversed, memo, iterator, callback);
-    };
+    include "lib/some.cfm";
 
-    private any function _filter(eachfn, arr, iterator, callback) {
-        var results = [];
-        arr = _map(arr, function (x, i) {
-            return {index: i, value: x};
-        });
-        eachfn(arr, function (x, callback) {
-            iterator(x.value, function (v) {
-                if (v) {
-                    results.push(x);
-                }
-                callback();
-            });
-        }, function (err) {
-            callback(_map(results.sort(function (a, b) {
-                return a.index - b.index;
-            }), function (x) {
-                return x.value;
-            }));
-        });
-    };
+    include "lib/every.cfm";
 
+    include "lib/sortBy.cfm";
 
-    private any function _reject(eachfn, arr, iterator, callback) {
-        var results = [];
-        arr = _map(arr, function (x, i) {
-            return {index: i, value: x};
-        });
-        eachfn(arr, function (x, callback) {
-            iterator(x.value, function (v) {
-                if (!v) {
-                    results.push(x);
-                }
-                callback();
-            });
-        }, function (err) {
-            callback(_map(results.sort(function (a, b) {
-                return a.index - b.index;
-            }), function (x) {
-                return x.value;
-            }));
-        });
-    };
+    include "lib/auto.cfm";
 
-    private any function _detect(eachfn, arr, iterator, main_callback) {
-        eachfn(arr, function (x, callback) {
-            iterator(x, function (result) {
-                if (result) {
-                    main_callback(x);
-                    main_callback = function () {};
-                }
-                else {
-                    callback();
-                }
-            });
-        }, function (err) {
-            main_callback();
-        });
-    };
+    include "lib/waterfall.cfm";
 
-    public any function some(arr, iterator, main_callback) {
-        this.forEach(arr, function (x, callback) {
-            iterator(x, function (v) {
-                if (v) {
-                    main_callback(true);
-                    main_callback = function () {};
-                }
-                callback();
-            });
-        }, function (err) {
-            main_callback(false);
-        });
-    };
-
-
-    public any function every(arr, iterator, main_callback) {
-        this.forEach(arr, function (x, callback) {
-            iterator(x, function (v) {
-                if (!v) {
-                    main_callback(false);
-                    main_callback = function () {};
-                }
-                callback();
-            });
-        }, function (err) {
-            main_callback(true);
-        });
-    };
-
-    
-
-    private any function sortBy(arr, iterator, callback) {
-        this.map(arr, function (x, callback) {
-            iterator(x, function (err, criteria) {
-                if (err) {
-                    callback(err);
-                }
-                else {
-                    callback(null, {value: x, criteria: criteria});
-                }
-            });
-        }, function (err, results) {
-            if (err) {
-                return callback(err);
-            }
-            else {
-                var fn = function (left, right) {
-                    var a = left.criteria;
-                    var b = right.criteria;
-                    return a < b ? -1 : a > b ? 1 : 0;
-                };
-                callback(null, _map(results.sort(fn), function (x) {
-                    return x.value;
-                }));
-            }
-        });
-    };
-
-    public any function auto(tasks, callback) {
-        callback = callback || function () {};
-        var keys = _keys(tasks);
-        if (!keys.length) {
-            return callback(null);
-        }
-
-        var results = {};
-
-        var listeners = [];
-        var addListener = function (fn) {
-            listeners.unshift(fn);
-        };
-        var removeListener = function (fn) {
-            for (var i = 0; i < listeners.length; i += 1) {
-                if (listeners[i] === fn) {
-                    listeners.splice(i, 1);
-                    return;
-                }
-            }
-        };
-        var taskComplete = function () {
-            _forEach(listeners.slice(0), function (fn) {
-                fn();
-            });
-        };
-
-        addListener(function () {
-            if (_keys(results).length === keys.length) {
-                callback(null, results);
-                callback = function () {};
-            }
-        });
-
-        _forEach(keys, function (k) {
-            var task = (_.isFunction(tasks[k])) ? [tasks[k]]: tasks[k];
-            var taskCallback = function (err) {
-                if (err) {
-                    callback(err);
-                    // stop subsequent errors hitting callback multiple times
-                    callback = function () {};
-                }
-                else {
-                    var args = Array.prototype.slice.call(arguments, 1);
-                    if (args.length <= 1) {
-                        args = args[0];
-                    }
-                    results[k] = args;
-                    taskComplete();
-                }
-            };
-            var requires = task.slice(0, Math.abs(task.length - 1)) || [];
-            var ready = function () {
-                return _reduce(requires, function (a, x) {
-                    return (a && results.hasOwnProperty(x));
-                }, true) && !results.hasOwnProperty(k);
-            };
-            if (ready()) {
-                task[task.length - 1](taskCallback, results);
-            }
-            else {
-                var listener = function () {
-                    if (ready()) {
-                        removeListener(listener);
-                        task[task.length - 1](taskCallback, results);
-                    }
-                };
-                addListener(listener);
-            }
-        });
-    };
-
-    public any function waterfall(tasks, callback) {
-        // callback = callback || function () {};
-        // if (!tasks.length) {
-        //     return callback();
-        // }
-        // var wrapIterator = function (iterator) {
-        //     return function (err) {
-        //         if (err) {
-        //             callback(err);
-        //             callback = function () {};
-        //         }
-        //         else {
-        //             var args = Array.prototype.slice.call(arguments, 1);
-        //             var next = iterator.next();
-        //             if (next) {
-        //                 args.push(wrapIterator(next));
-        //             }
-        //             else {
-        //                 args.push(callback);
-        //             }
-        //             this.nextTick(function () {
-        //                 iterator.apply(null, args);
-        //             });
-        //         }
-        //     };
-        // };
-
-        // wrapIterator(this.iterator(tasks))();
-    };
  	public any function parallel(tasks, callback) {
         callback = _.isFunction(callback)? callback : noop;
         
@@ -683,112 +357,57 @@ component name="async" extends="foundry.core" {
 	 
 		return local.keys;
 	}
-	
-	// I accept N thread instances and a callback (the last
-	// argument). The callback is invoked when each one of the given
-	// threads has completed execution (success or failure). The
-	// thread object is echoed back in the callback arguments.
-	function threadsDone(){
-		// Extract the callback from the arguemnts.
-		var callback = arguments[ arrayLen( arguments ) ];
 
-		// Extract the thread objects - arguments[1..N-1].
-		var threads = arraySlice( arguments, 1, arrayLen( arguments ) - 1 );
+    /**
+     * This function allows you to share the underlying ExecutorService with multiple concurrent methods.<br/>
+     * For example, this shares a threadpool of 10 threads across multiple _eachParrallel calls:<br/>
+     * _withPool( 10, function() {<br/>
+     * _eachParrallel(array, function() { ... });<br/>
+     * _eachParrallel(array, function() { ... });<br/>
+     * _eachParrallel(array, function() { ... });<br/>
+     * });
+     *
+     * @limit the number of threads to use in the thread pool for processing.
+     * @closure the closure that contains the calls to other concurrent library functions.
+     */
+    public void function _withPool(required numeric limit, required function closure)
+    {
+        request["sesame-concurrency-es"] = createObject("java", "java.util.concurrent.Executors").newFixedThreadPool(arguments.limit);
 
-		// I am a utiltiy function that determine if a given thread
-		// is still running based on its status.
-		var isThreadRunning = function( threadInstance ){
+        try
+        {
+            arguments.closure();
+        }
+        catch(Any exc)
+        {
+            rethrow;
+        }
+        finally
+        {
+            request["sesame-concurrency-es"].shutdown();
+            StructDelete(request, "sesame-concurrency-es");
+        }
+    }
+    
+    /**
+     * Run the closure in a thread. Must be run inside a _withPool() block to set up the ExecutorService, and close it off at the end.
+     * For example:<br/>
+     * _withPool( 10, function() {<br/>
+     * _thread(function() { ... });<br/>
+     * _thread(function() { ... });<br/>
+     * });
+     *<br/>
+     * Return an instance of java.util.concurrent.Future to give you control over the closure, and/or retrieve the value returned from the closure.
+     *
+     * @closure the closure to call asynchronously
+     */
+    public any function _thread(required function closure)
+    {
+        var executorService = request["sesame-concurrency-es"];
+        var callable = new lib.ClosureConcurrent(arguments.closure);
 
-			console.log("threadStatus: " & threadInstance.status);
-			// A thread can end with a success or an error, both of
-			// which lead to different final status values.
-			return(
-				(threadInstance.status != "TERMINATED") &&
-				(threadInstance.status != "COMPLETED")
-			);
-
-		};
-
-		// I am a utility function that determines if any of the
-		// given blogs are still running.
-		var threadsAreRunning = function(){
-			// Loop over each thread to look for at least ONE that is
-			// still running.
-			for (var threadInstance in threads){
-				console.log("threadStatus: " & threadInstance.status);
-			
-				// Check to see if this thread is still running. This
-				// is if it has not yet completed (successfully) or
-				// terminated (error).
-				if (isThreadRunning( threadInstance )){
-
-					// We don't need to continue searching; if this
-					// thread is running, that's good enough.
-					return( true );
-
-				}
-
-			}
-
-			// If we made it this far, then no threads are running.
-			return( false );
-
-		};
-
-		// I am utility function that invokes the callback with the
-		// given thread instances.
-		var invokeCallback = function(){
-			// All of the threads we are monitoring have stopped
-			// running. Now, we can invoke the callback. Let's build
-			// up an argument collection.
-			var callbackArguments = {};
-
-			// Translate the array-based arguments into a struct-
-			// based collection of arguments.
-			for (var i = 1 ; i < arrayLen( threads ) ; i++){
-
-				callbackArguments[ i ] = threads[ i ];
-
-			}
-
-			// Invoke the callback with the given threads.
-			callback( argumentCollection = callbackArguments );
-
-		};
-
-		// In order to check the threads, we need to launch an
-		// additional thread to act as a monitor. This will do
-		// nothing but sleep and check the threads.
-		//
-		// NOTE: We need to pass the two methods INTO the thread
-		// explicitly since the thread body does NOT have access
-		// to the local scope of the parent function.
-		thread
-			name = "threadsDone_#getTickCount()#"
-			action = "run"
-			threadsarerunning = threadsAreRunning
-			invokecallback = invokeCallback
-			{
-
-			// Check to see if the threads are running.
-			while (threadsAreRunning()){
-
-				// Sleep briefly to allow other threads to complete.
-				thread
-					action="sleep"
-					duration="10"
-				;
-
-			}
-
-			// If we made it this far, it means that the threads
-			// have all finished executing and the while-loop has
-			// been exited. Let's invoke the callback.
-			invokeCallback();
-
-		};
-
-	}
+        return executorService.submit(callable.toCallable());
+    }
 /*
 	* 	@hint Internal helper function. Converts boolean equivalents to boolean true or false. Helpful for keeping function return values consistent.
 	*/

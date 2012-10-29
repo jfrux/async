@@ -1,5 +1,5 @@
 <cfscript>
-	async = new async_sesame();
+	async = new async();
 	console = new foundry.lib.console();
 
 	endpoints = [
@@ -20,10 +20,17 @@
 	};
 
 	console.log("async.forEach()");
-	async._eachParallel(endpoints,function (endpoint, next) {
+	async.forEach(endpoints,function (endpoint, next) {
 		console.info("#endpoint#");
-	}	);
+	},
+	doneEndpoints
+	);
 
+
+	testMap = {};
+	async.filter(endpoints,function(endpoint,next) {
+		console.info("#serialize(endpoint)#");
+	},doneEndpoints);
 
 	// console.log("async.forEachSeries()");
 	// async.forEachSeries(endpoints,function(endpoint, next) {
