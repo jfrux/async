@@ -1,5 +1,5 @@
 <cfscript>
-	async = new async();
+	async = new async_sesame();
 	console = new foundry.lib.console();
 
 	endpoints = [
@@ -20,23 +20,21 @@
 	};
 
 	console.log("async.forEach()");
-	async.forEach(endpoints,function (endpoint, next) {
-		
-	  },
-	  doneEndpoints
-	);
+	async._eachParallel(endpoints,function (endpoint, next) {
+		console.info("#endpoint#");
+	}	);
 
 
-	console.log("async.forEachSeries()");
-	async.forEachSeries(endpoints,function(endpoint, next) {
-		console.print(endpoint);
-		next();
-	},doneEndpoints);
+	// console.log("async.forEachSeries()");
+	// async.forEachSeries(endpoints,function(endpoint, next) {
+	// 	console.print(endpoint);
+	// 	next();
+	// },doneEndpoints);
 
 
-	console.log("async.forEachLimit()");
-	async.forEachLimit(endpoints,10,function(endpoint, next) {
-		console.print(endpoint);
-		next();
-	},doneEndpoints);
+	// console.log("async.forEachLimit()");
+	// async.forEachLimit(endpoints,10,function(endpoint, next) {
+	// 	console.print(endpoint);
+	// 	next();
+	// },doneEndpoints);
 </cfscript>
